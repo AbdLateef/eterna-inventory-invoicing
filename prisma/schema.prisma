@@ -1,0 +1,63 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String    @id @default(uuid())
+  email     String    @unique
+  password  String    // Will store bcrypt/argon2 hashed password
+  products  Product[]
+  invoices  Invoice[]
+  createdAt DateTime  @default(now())
+}
+
+model Product {
+  id             String        @id @default(uuid())
+  userId         String
+  user           User          @relation(fields: [userId], references: [id])
+  sku            String
+  name           String
+  description    String?
+  unitPrice      Int           // Stored in integer minor units (e.g., cents/rupiah) to avoid floating-point errors
+  quantityOnHand Int           // Must be >= 0
+  invoiceItems   InvoiceItem[]
+  deletedAt      DateTime?     // Used for soft deletion to preserve invoice history
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@unique([userId, sku])      // SKU must be unique per user workspace
+}
+
+model Invoice {
+  id            String        @id @default(uuid())
+  userId        String
+  user          User          @relation(fields: [userId], references: [id])
+  invoiceNumber String        @unique
+  customerName  String
+  issueDate     DateTime?
+  dueDate       DateTime?
+  status        String        @default("DRAFT") // Valid states: DRAFT, ISSUED, PAID, CANCELLED
+  notes         String?
+  subtotal      Int
+  taxAmount     Int
+  total         Int
+  items         InvoiceItem[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model InvoiceItem {
+  id          String   @id @default(uuid())
+  invoiceId   String
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id])
+  productName String   // Snapshot of the product name at the time of invoice creation
+  unitPrice   Int      // Snapshot of the product price at the time of invoice creation
+  quantity    Int      // Must be > 0
+  lineTotal   Int
+}
