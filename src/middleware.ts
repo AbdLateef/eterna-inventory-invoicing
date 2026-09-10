@@ -31,11 +31,15 @@ export async function middleware(request: NextRequest) {
 
     try {
       const { payload } = await jwtVerify(token, JWT_SECRET);
-      const response = NextResponse.next();
+      const requestHeaders = new Headers(request.headers);
       if (payload.userId && typeof payload.userId === "string") {
-        response.headers.set("x-user-id", payload.userId);
+        requestHeaders.set("x-user-id", payload.userId);
       }
-      return response;
+      return NextResponse.next({
+        request: {
+          headers: requestHeaders,
+        },
+      });
     } catch {
       return NextResponse.json(
         { error: "Unauthorized access" },
