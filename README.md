@@ -35,9 +35,10 @@ JWT_SECRET="eterna-inventory-invoicing-secret-key-2026-development"
 TAX_RATE="11"
 ```
 
-### 4. Run Database Migrations
-Run Prisma migrations to create tables and indexes:
+### 4. Generate Client & Run Database Migrations
+Generate Prisma Client types and run database migrations:
 ```bash
+npx prisma generate
 npx prisma migrate dev
 ```
 
