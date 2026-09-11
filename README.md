@@ -1,8 +1,7 @@
 # StockFlow — Inventory & Invoicing System
 
-StockFlow is a full-stack minimal Inventory & Invoicing web application built with **Next.js 16 (App Router)**, **TypeScript**, **Prisma 7 ORM**, and **PostgreSQL**.
-
-It helps small businesses manage their product inventory and issue customer invoices securely without overselling available stock.
+StockFlow is a simple internal web app for a small distribution business that tracks the products it holds in stock and bills its customers with invoices.
+This solves the problem of their existing process - managing everything in a spreadsheet which leads to overselling stock they do not actually have.
 
 ---
 
@@ -147,7 +146,7 @@ All `/api/products` and `/api/invoices` endpoints require authentication via the
 
 ## AI Usage
 
-This project was built in collaboration with **Antigravity IDE Assistant** (powered by Gemini & Claude models).
+This project was built in collaboration with **Antigravity IDE Assistant** (powered by Gemini & Claude models). I used AI as a pair programming partner for the basic scaffolding, boilerplate, and some utility functions. However, I always reviewed, refined, and tested the generated code.
 
 **Tools & Workflows**:
 - **Architecture & Schema Design**: Guidance on Prisma 7 driver adapter setup, soft-delete design pattern, and money integer representation.
@@ -161,8 +160,8 @@ All generated code was thoroughly reviewed, refined, compiled, and verified via 
 
 ## Time Spent
 
-- **Active Development Time**: Approximately 7.5 hours of focused design, coding, testing, and documentation across two sessions.
-- **Timeline Breakdown**:
-  - **Session 1 (Late Night)**: ~4 hours (Setup, Prisma 7 driver adapter, Auth API/UI, Products API/UI, Invoice API)
+- **Active Development Time**: Approximately 8 hours of focused design, coding, testing, and documentation across two sessions.
+- **Timeline**:
+  - **Session 1 (Late Night)**: ~4.5 hours (Setup, Prisma 7 driver adapter, Auth API/UI, Products API/UI, Invoice API)
   - **Overnight Rest Break**: 2:00 AM – 9:30 AM
   - **Session 2 (Next Morning/Afternoon)**: ~3.5 hours (Invoice UI, Seed script, Vitest automated tests, Swagger OpenAPI documentation, and final polish)
