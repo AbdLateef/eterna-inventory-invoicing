@@ -1,0 +1,318 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "StockFlow — Inventory & Invoicing API",
+    "description": "Minimal Inventory and Invoicing REST API documentation for StockFlow.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Local Development Server"
+    }
+  ],
+  "tags": [
+    { "name": "Authentication", "description": "User registration, login, and logout" },
+    { "name": "Products", "description": "Inventory product management (CRUD + search & pagination)" },
+    { "name": "Invoices", "description": "Invoice management, automatic totals, stock guard, & status state machine" }
+  ],
+  "paths": {
+    "/api/auth/register": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Register a new user account",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": { "type": "string", "format": "email", "example": "user@example.com" },
+                  "password": { "type": "string", "minLength": 8, "example": "Password123!" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "User registered successfully" },
+          "400": { "description": "Validation error or weak password" },
+          "409": { "description": "Email address already registered" }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Login user and issue httpOnly JWT cookie",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": { "type": "string", "format": "email", "example": "demo@stockflow.com" },
+                  "password": { "type": "string", "example": "Password123!" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Logged in successfully, token cookie set" },
+          "401": { "description": "Invalid email or password (generic message)" }
+        }
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Logout user and clear httpOnly JWT cookie",
+        "responses": {
+          "200": { "description": "Logged out successfully" }
+        }
+      }
+    },
+    "/api/products": {
+      "get": {
+        "tags": ["Products"],
+        "summary": "List user's active products (paginated + search)",
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 10 } },
+          { "name": "search", "in": "query", "schema": { "type": "string" }, "description": "Search by product Name or SKU" }
+        ],
+        "responses": {
+          "200": { "description": "Paginated list of products" },
+          "401": { "description": "Unauthorized access" }
+        }
+      },
+      "post": {
+        "tags": ["Products"],
+        "summary": "Create a new product",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["sku", "name", "unitPrice", "quantityOnHand"],
+                "properties": {
+                  "sku": { "type": "string", "example": "PROD-006" },
+                  "name": { "type": "string", "example": "Gaming Headset 7.1" },
+                  "description": { "type": "string", "example": "Surround sound headset" },
+                  "unitPrice": { "type": "integer", "minimum": 0, "example": 750000, "description": "Integer minor units (Rupiah)" },
+                  "quantityOnHand": { "type": "integer", "minimum": 0, "example": 15 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Product created successfully" },
+          "400": { "description": "Validation failed or duplicate SKU" },
+          "401": { "description": "Unauthorized access" }
+        }
+      }
+    },
+    "/api/products/{id}": {
+      "get": {
+        "tags": ["Products"],
+        "summary": "Get product detail by ID",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Product object" },
+          "401": { "description": "Unauthorized access" },
+          "404": { "description": "Product not found" }
+        }
+      },
+      "put": {
+        "tags": ["Products"],
+        "summary": "Update an existing product",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "sku": { "type": "string" },
+                  "name": { "type": "string" },
+                  "description": { "type": "string" },
+                  "unitPrice": { "type": "integer", "minimum": 0 },
+                  "quantityOnHand": { "type": "integer", "minimum": 0 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Product updated" },
+          "400": { "description": "Validation error or SKU conflict" },
+          "401": { "description": "Unauthorized access" },
+          "404": { "description": "Product not found" }
+        }
+      },
+      "delete": {
+        "tags": ["Products"],
+        "summary": "Soft-delete a product",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Product soft-deleted" },
+          "401": { "description": "Unauthorized access" },
+          "404": { "description": "Product not found" }
+        }
+      }
+    },
+    "/api/invoices": {
+      "get": {
+        "tags": ["Invoices"],
+        "summary": "List user's invoices (paginated + status filter)",
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 10 } },
+          { "name": "status", "in": "query", "schema": { "type": "string", "enum": ["DRAFT", "ISSUED", "PAID", "CANCELLED"] } }
+        ],
+        "responses": {
+          "200": { "description": "Paginated invoices list" },
+          "401": { "description": "Unauthorized access" }
+        }
+      },
+      "post": {
+        "tags": ["Invoices"],
+        "summary": "Create a new draft invoice (calculates totals server-side)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["customerName", "items"],
+                "properties": {
+                  "customerName": { "type": "string", "example": "PT Nusantara Jaya" },
+                  "issueDate": { "type": "string", "format": "date-time" },
+                  "dueDate": { "type": "string", "format": "date-time" },
+                  "notes": { "type": "string", "example": "Payment within 14 days" },
+                  "items": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                      "type": "object",
+                      "required": ["productId", "quantity"],
+                      "properties": {
+                        "productId": { "type": "string" },
+                        "quantity": { "type": "integer", "minimum": 1, "example": 2 }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Invoice created in DRAFT state" },
+          "400": { "description": "Stock guard failure or validation error" },
+          "401": { "description": "Unauthorized access" }
+        }
+      }
+    },
+    "/api/invoices/{id}": {
+      "get": {
+        "tags": ["Invoices"],
+        "summary": "Get invoice detail with snapshotted line items",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Invoice object with items" },
+          "401": { "description": "Unauthorized access" },
+          "404": { "description": "Invoice not found" }
+        }
+      },
+      "put": {
+        "tags": ["Invoices"],
+        "summary": "Update draft invoice lines and customer info",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "customerName": { "type": "string" },
+                  "issueDate": { "type": "string", "format": "date-time" },
+                  "dueDate": { "type": "string", "format": "date-time" },
+                  "notes": { "type": "string" },
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "productId": { "type": "string" },
+                        "quantity": { "type": "integer", "minimum": 1 }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Draft invoice updated" },
+          "400": { "description": "Cannot edit non-DRAFT invoice or stock guard error" },
+          "401": { "description": "Unauthorized access" },
+          "404": { "description": "Invoice not found" }
+        }
+      }
+    },
+    "/api/invoices/{id}/status": {
+      "patch": {
+        "tags": ["Invoices"],
+        "summary": "Transition invoice status (DRAFT -> ISSUED, ISSUED -> PAID, etc.)",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["status"],
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": ["ISSUED", "PAID", "CANCELLED"],
+                    "example": "ISSUED"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Status updated (decrements or restores stock atomically if applicable)" },
+          "400": { "description": "Illegal status transition or stock guard error" },
+          "401": { "description": "Unauthorized access" },
+          "404": { "description": "Invoice not found" }
+        }
+      }
+    }
+  }
+}
