@@ -21,7 +21,6 @@ export class InvoiceService {
 
     const latestInvoice = await prisma.invoice.findFirst({
       where: {
-        userId,
         invoiceNumber: {
           startsWith: prefix,
         },
